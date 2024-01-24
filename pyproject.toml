@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyredmine"
+version = "1.0.0"
+description = "Python package for Redmine REST API"
+
+[tools.setuptools.packages.find]
+where = ["src"]
