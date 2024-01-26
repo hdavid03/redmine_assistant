@@ -11,4 +11,4 @@ description = "Python CLI tool for Redmine REST API with useful features"
 where = ["src"]
 
 [project.scripts]
-redmine-assistant = "redmine_cli.__main__:main"
+redmine-assistant = "redmine_cli.cli:main"
