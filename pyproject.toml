@@ -3,9 +3,12 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyredmine"
+name = "redmine-assistant"
 version = "1.0.0"
-description = "Python package for Redmine REST API"
+description = "Python CLI tool for Redmine REST API with useful features"
 
 [tools.setuptools.packages.find]
 where = ["src"]
+
+[project.scripts]
+redmine-assistant = "redmine_cli.__main__:main"
