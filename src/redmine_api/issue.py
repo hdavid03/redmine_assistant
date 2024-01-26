@@ -1,8 +1,6 @@
-from datetime import datetime
+from ui_utils.datetime_utils import estimate_time_delta_from_now
+from ui_utils.cli_utils import HLINE
 from textwrap import wrap
-
-
-HLINE = f'{"-" * 120}\r\n'
 
 
 class Issue:
@@ -28,42 +26,6 @@ class Issue:
 		self.journals = parameters.get("journals")
 
 
-	@staticmethod
-	def _estimate_time_delta(time_delta: int, limit: tuple, intervals: tuple):
-		est = time_delta // limit[0]
-		ret = f'about {est} {intervals[0] + "s" if est > 1 else intervals[0]}' 
-		left = est - est * limit[0]
-		if left > limit[1] - 1:
-			left = left // limit[1]
-			ret += f' and {left} {intervals[1] + "s" if left > 1 else intervals[1]} ago'
-		else:
-			ret += " ago."
-		return ret
-
-
-	@staticmethod
-	def _get_estimated_time_delta_string(date_str: str):
-		d1 = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
-		d2 = datetime.now()
-		diff = d2 - d1
-		if diff.days > 364:
-			return Issue._estimate_time_delta(diff.days, (365, 30), ("year", "month"))
-		elif diff.days > 29:
-			return Issue._estimate_time_delta(diff.days, (30, 7), ("month", "week"))
-		elif diff.days > 6:
-			return Issue._estimate_time_delta(diff.days, (7, 1), ("week", "day"))
-		elif diff.days > 1:
-			return f'about {diff.days} days ago.'
-		elif diff.seconds > 3599:
-			return Issue._estimate_time_delta(diff.seconds, (3600, 60), ("hour", "minute"))
-		elif diff.seconds > 59:
-			minutes = diff.seconds // 60
-			return f'about {minutes} {"minutes ago." if minutes > 1 else "minute ago."}'
-		else:
-			return f'''{"about " + str(diff.seconds) + " seconds ago."
-				   if diff.seconds > 10 else "just now."}'''
-
-
 	def __str__(self):
 		text =  HLINE
 		text +=	f'Subject: {self.subject}\r\nadded by {self.author["name"]} '
@@ -74,16 +36,16 @@ class Issue:
 									   if self.assigned_to is not None
 									   else "nobody yet"}'''
 		text += f' with {self.priority["name"]} priority\r\n'
-		text += f'{"ID:":>15} {self.id:<25}'
+		text += f'{"ID:":>15} {self.id:<26}'
 		text += f'{"Tracker:":>15} {self.tracker["name"]}\r\n'
-		text += f'{"Project:":>15} {self.project["name"]:<25}'
+		text += f'{"Project:":>15} {self.project["name"][:26]:<26}'
 		text += f'{"Status:":>15} {self.status["name"]}\r\n'
 		text += f'{"Done ratio:":>15}'
-		text += f' [{str("#" * (self.done_ratio // 10)).ljust(10, "-")}{"]":<14}'
-		text += f'''{"Spent hours: ".rjust(14) + str(self.spent_hours)
+		text += f' [{str("#" * (self.done_ratio // 10)).ljust(10, ".")}{"]":<16}'
+		text += f'''{"Spent hours: ".rjust(15) + str(self.spent_hours)
 				if self.spent_hours is not None else ""}\r\n'''
 		text += f'''{"Updated at ".rjust(15)
-		+ self._get_estimated_time_delta_string(self.updated_on)}\r\n'''
+		+ estimate_time_delta_from_now(self.updated_on)}\r\n'''
 
 		if self.start_date is not None:
 			text += f'{"Start date:":>15} {self.start_date}\r\n'
@@ -97,28 +59,25 @@ class Issue:
 
 
 	def get_as_row(self):
-		row = f'{self.id:<6}'
-		row += f'{self.project["name"]:<25}'
-		row += f'{self.tracker["name"]:<9}'
-		row += f'{self.priority["name"]:<9}'
-		row += f'{self.subject:<40}'
-		row += f'{self.status["name"]:<9}'
-		row += f'''{self.assigned_to["name"] 
-		   if self.assigned_to is not None else "":<15}'''
-		row += f'''{str(self.done_ratio) + "%"
-		   if self.done_ratio is not None else ""}'''
+		row = f'|{self.id:^7}'
+		row += f'|{self.project["name"][:26]:26}'
+		row += f'|{self.tracker["name"][:10]:^10}'
+		row += f'|{self.status["name"][:10]:^10}'
+		row += f'|{self.priority["name"][:10]:^10}'
+		row += f'|{self.subject[:34]:34}'
+		row += f'''|{self.assigned_to["name"][:15] 
+		   if self.assigned_to is not None else "":^15}|'''
 		return row
 
 		
 	@staticmethod
 	def table_issues(issues: list):
 		text = HLINE
-		text += f'{"|ID".ljust(6)}{"Project".ljust(24)}{"Tracker".ljust(10)}'
-		text += f'{"Priority".ljust(10)}{"Subject".ljust(10)}'
-		text +=	f'{"Status".ljust(10)}{"Author".ljust(15)}'
-		text +=	f'{"Done ratio".ljust(10)}|\r\n'
+		text += f'|{"ID":^7}|{"Project":^26}|{"Tracker":^10}'
+		text += f'|{"Status":^10}|{"Priority":^10}'
+		text +=	f'|{"Subject":^34}|{"Assignee":^15}|\r\n'
 		text += HLINE
-		print(text)
+		print(text, end="")
 		for issue in issues:
 			print(issue.get_as_row())
 
