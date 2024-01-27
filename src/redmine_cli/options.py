@@ -255,7 +255,8 @@ OPTIONS = {
 			]
 		},
 		#"delete": {},
-		},
+		"help": "Manage issues"
+	},
 	"time-entry": {
 		"show": {
 			"positionals": [
@@ -409,9 +410,11 @@ OPTIONS = {
 				}
 			],
 			"help": "Create new time entry"
-		}
+		},
 		# "update": {},
 		# "delete": {}
+		"help": "Log time spent and list time entries"
 	}
 	# "project": {}
+
 }
