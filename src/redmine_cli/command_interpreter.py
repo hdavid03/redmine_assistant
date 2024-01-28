@@ -3,45 +3,91 @@ from options import TITLE
 from options import DESCRIPTION
 from options import EPILOG
 from options import GLOBAL_OPTIONS
+from options import OPTIONS
 
 
 class CommandInterpreter:
 
 
     def __init__(self):
-        self.parser = ArgumentParser(prog=TITLE, description=DESCRIPTION,
-                                     epilog=EPILOG)
+        self.parser = ArgumentParser(prog=TITLE,
+                      description=DESCRIPTION, epilog=EPILOG)
         self.parser.add_argument(GLOBAL_OPTIONS["short"], GLOBAL_OPTIONS["long"],
-                                 action=GLOBAL_OPTIONS["action"], help=GLOBAL_OPTIONS["help"])
-        command_parsers = self.parser.add_subparsers(dest="command", required=True)
+                                 action=GLOBAL_OPTIONS["action"],
+                                 help=GLOBAL_OPTIONS["help"])
+        command_parsers = self.parser.add_subparsers(dest="command",
+                          title="commands", required=True)
+        for command in OPTIONS:
+            # command = issue 
+            cmd = command_parsers.add_parser(command, help=OPTIONS[command]["help"])
+            cmd_subparsers = cmd.add_subparsers(dest=f'{command}_command',
+                             title=f'{command} commands', required=True)
+            # sub_cmd = show, create, list etc.
+            for sub_cmd in OPTIONS[command]:
+                if sub_cmd == "help":
+                    continue
+                cmd_subparser = cmd_subparsers.add_parser(sub_cmd,
+                                help=OPTIONS[command][sub_cmd]["help"])
+                for sub_cmd_pos in OPTIONS[command][sub_cmd]["positionals"]:
+                    cmd_subparser.add_argument(
+                        sub_cmd_pos.get("name"),
+                        type=sub_cmd_pos.get("type"),
+                        help=sub_cmd_pos.get("help")
+                    )
+                for sub_cmd_flag in OPTIONS[command][sub_cmd]["flags"]:
+                    try:
+                        cmd_subparser.add_argument(
+                            sub_cmd_flag["short"],
+                            sub_cmd_flag["long"],
+                            action=sub_cmd_flag["action"],
+                            help=sub_cmd_flag.get("help")
+                        )
+                    except KeyError as error:
+                        key = error.__str__()
+                        if key == "'short'":
+                            cmd_subparser.add_argument(
+                                sub_cmd_flag["long"],
+                                action=sub_cmd_flag["action"],
+                                help=sub_cmd_flag.get("help")
+                            )
+                        else:
+                            raise RuntimeError
+
+                for sub_cmd_opt in OPTIONS[command][sub_cmd]["options"]:
+                    try:
+                        cmd_subparser.add_argument(
+                            sub_cmd_opt["short"],
+                            sub_cmd_opt["long"],
+                            type=sub_cmd_opt.get("type"),
+                            nargs=sub_cmd_opt.get("nargs"),
+                            metavar=sub_cmd_opt.get("metavar"),
+                            choices=sub_cmd_opt.get("choices"),
+                            help=sub_cmd_opt.get("help")
+                        )
+                    except KeyError as error:
+                        key = error.__str__()
+                        if key == "'short'":
+                            cmd_subparser.add_argument(
+                                sub_cmd_opt["long"],
+                                type=sub_cmd_opt.get("type"),
+                                nargs=sub_cmd_opt.get("nargs"),
+                                metavar=sub_cmd_opt.get("metavar"),
+                                choices=sub_cmd_opt.get("choices"),
+                                help=sub_cmd_opt.get("help")
+                            )
+                        else:
+                            raise RuntimeError
+
+    def get_parser(self):
+        return self.parser
 
 
 def main(command_line=None):
-    parser = ArgumentParser('Redmine cli tool')
-    subparsers = parser.add_subparsers(dest='command')
-    issue = subparsers.add_parser('issue', help='Issue related commands')
-    issue_subparser = issue.add_subparsers(dest='issue_cmd', required=True)
-    issue_create = issue_subparser.add_parser('create', help='create new issue')
-    issue_create.add_argument(
-        '--dry-run',
-        help='do nothing, just pretend',
-        action='store_true'
-    )
-    issue_create.add_argument('-p', '--project-id', nargs=1, help='project id')
-    issue_create.add_argument('-s', '--subject', nargs=1, help='subject')
-    issue_create.add_argument('-t', '--tracker-id', nargs=1, help='tracker id')
-    issue_show = issue_subparser.add_parser("show", help="Show a specific issue")
-    issue_show.add_argument("id", type=int, help="ex. redmine-assistant issue show 10234")
-    issue_show.add_argument("-i", "--include", type=str, nargs="*", choices=["journals", "attachments", "changesets"])
-    issue_list = issue_subparser.add_parser('list', help='list issues')
-    issue_list.add_argument('-u', '--author-user-id', nargs=1, help='List by author id')
-    issue_list.add_argument('-a', '--assignee-user-id', nargs=1, help='List by assignee id')
-    time_entry = subparsers.add_parser('time-entry', help='Time entry related commands')
-    time_entry_subparsers = time_entry.add_subparsers(dest='time_entry_cmd', required=True)
-    time_entry_list = time_entry_subparsers.add_parser('list', help='List time entries')
-    time_entry_list.add_argument('-u', '--author-user-id', nargs=1, help='List by author id')
-    time_entry_list.add_argument('-p', '--project-id', nargs=1, help='project id')
-    args = parser.parse_args(command_line)
+    cmd = CommandInterpreter()
+    parser = cmd.get_parser()
+    # args = ['issue', 'create']
+    args = command_line
+    args = parser.parse_args(args)
     print(args.command)
     if args.command == 'time-entry':
         print(args)
@@ -51,13 +97,11 @@ def main(command_line=None):
             print(f'{args.project_id if args.project_id is not None else ""}')
             print(f'{args.author_user_id if args.author_user_id is not None else ""}')
     elif args.command == 'issue':
-        print(args)
-        print(args.issue_cmd)
-        if args.issue_cmd == 'create':
+        if args.issue_command == 'create':
             print(f'{args.project_id if args.project_id is not None else ""}')
             print(f'{args.tracker_id if args.tracker_id is not None else ""}')
             print(f'{args.subject if args.subject is not None else ""}')
-        if args.issue_cmd == 'list':
+        if args.issue_command == 'list':
             print(f'{args.author_user_id if args.author_user_id is not None else ""}')
             print(f'{args.assignee_user_id if args.assignee_user_id is not None else ""}')
 
