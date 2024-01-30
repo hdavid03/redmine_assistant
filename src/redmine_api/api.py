@@ -1,6 +1,8 @@
 from requests import get as http_get
+from requests import post as http_post
 from redmine_api.issue import Issue
 from redmine_api.time_entry import TimeEntry
+from urllib.parse import urlencode
 
 class RedmineApi:
 
@@ -25,6 +27,7 @@ class RedmineApi:
 		
 		url = f'{self.base_url}{source}?'
 		url += "&".join([f'{key}={parameters[key]}' for key in parameters])
+		url = url.replace(" ", "%20")
 		return url
 	
 
@@ -50,6 +53,12 @@ class RedmineApi:
 		resp = http_get(url=api_url, headers=self.header)
 		time_entries = TimeEntry.get_time_entries_from_json(resp.json()["time_entries"])
 		TimeEntry.table_time_entries(time_entries)
+
+	
+	def create_time_entry(self, parameters: dict):
+		api_url = self._get_api_endpoint("time_entries.json")
+		resp = http_post(url=api_url, headers=self.header, json=parameters)
+		return resp
 
 
 	def get_time_entry_by_id(self, id: int):

@@ -5,41 +5,25 @@ class CommandInterpreter:
 
 
     def __init__(self,
-                 title=None,
+                 prog=None,
                  description=None,
                  epilog=None,
                  arguments: dict=None):
 
-        self.parser = ArgumentParser(prog=title,
+        self.parser = ArgumentParser(prog=prog,
                       description=description, epilog=epilog)
         _add_arguments_to_parser(parser=self.parser,
-                                 arguments=arguments, dest="main")
+                                 arguments=arguments, dest=prog)
 
+        self.command_executors = {}
 
+    
     def get_parser(self):
         return self.parser
 
 
     def run_parser(self, args=None):
-        arg_namespace = self.parser.parse_args(args)
-        print(type(arg_namespace))
-        print(arg_namespace.command)
-        if arg_namespace.command == 'time-entry':
-            print(args)
-            print(arg_namespace.time_entry_cmd)
-            if arg_namespace.time_entry_cmd == 'list':
-                print('list')
-                print(f'{arg_namespace.project_id if arg_namespace.project_id is not None else ""}')
-                print(f'{arg_namespace.author_user_id if arg_namespace.author_user_id is not None else ""}')
-        elif arg_namespace.command == 'issue':
-            if arg_namespace.issue_command == 'create':
-                print(f'{arg_namespace.project_id if arg_namespace.project_id is not None else ""}')
-                print(f'{arg_namespace.tracker_id if arg_namespace.tracker_id is not None else ""}')
-                print(f'{arg_namespace.subject if arg_namespace.subject is not None else ""}')
-            if arg_namespace.issue_command == 'list':
-                print(f'{arg_namespace.author_user_id if arg_namespace.author_user_id is not None else ""}')
-                print(f'{arg_namespace.assignee_user_id if arg_namespace.assignee_user_id is not None else ""}')
-            return arg_namespace
+        return self.parser.parse_args(args)
         
 
 def _add_arguments_to_parser(
@@ -84,6 +68,7 @@ def _add_arguments_to_parser(
                     option["long"],
                     type=option.get("type"),
                     nargs=option.get("nargs"),
+                    required=option.get("required"),
                     metavar=option.get("metavar"),
                     choices=option.get("choices"),
                     help=option.get("help")
@@ -95,6 +80,7 @@ def _add_arguments_to_parser(
                         option["long"],
                         type=option.get("type"),
                         nargs=option.get("nargs"),
+                        required=option.get("required"),
                         metavar=option.get("metavar"),
                         choices=option.get("choices"),
                         help=option.get("help")

@@ -116,7 +116,7 @@ ARGS = {
 						{
 							"short": "-u",
 							"long": "--user-id",
-							"type": int,
+							"type": str,
 							"nargs": 1,
 							"required": False,
 							"metavar": "ID",
@@ -387,7 +387,7 @@ ARGS = {
 						{
 							"short": "-u",
 							"long": "--user-id",
-							"type": int,
+							"type": str,
 							"nargs": 1,
 							"required": False,
 							"metavar": "ID",
@@ -424,7 +424,7 @@ ARGS = {
 					"options": [
 						{
 							"short": "-d",
-							"long": "--date",
+							"long": "--spent-on",
 							"type": str,
 							"nargs": 1,
 							"required": False,
@@ -442,7 +442,7 @@ ARGS = {
 						},
 						{
 							"short": "-c",
-							"long": "--comment",
+							"long": "--comments",
 							"type": str,
 							"nargs": 1,
 							"required": False,
