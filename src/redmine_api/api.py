@@ -51,10 +51,34 @@ class RedmineApi:
 	def get_time_entries(self, filt: dict):
 		api_url = self._get_api_endpoint("time_entries.json", filt)
 		resp = http_get(url=api_url, headers=self.header)
+		resp_json = resp.json()
+		count = resp_json.get("total_count")
+		limit = resp_json.get("limit")
 		time_entries = TimeEntry.get_time_entries_from_json(resp.json()["time_entries"])
 		TimeEntry.table_time_entries(time_entries)
+		if filt.get("offset") is None:
+			filt["offset"] = 0
+		offset = limit
+		ans = ""
+		while ans.upper() != "Q":
+			ans = input("b/n/q")
+			if ans.upper() == "B":
+				if filt["offset"] > (offset - 1):
+					filt["offset"] -= offset
+				elif filt["offset"] != 0:
+					filt["offset"] = 0
+			elif ans.upper() == "N":
+				if (filt["offset"] + offset) < count + 1:
+					filt["offset"] += offset
+			else:
+				continue
 
-	
+			api_url = self._get_api_endpoint("time_entries.json", filt)
+			resp = http_get(url=api_url, headers=self.header)
+			time_entries = TimeEntry.get_time_entries_from_json(resp.json()["time_entries"])
+			TimeEntry.table_time_entries(time_entries)
+
+
 	def create_time_entry(self, parameters: dict):
 		api_url = self._get_api_endpoint("time_entries.json")
 		resp = http_post(url=api_url, headers=self.header, json=parameters)
