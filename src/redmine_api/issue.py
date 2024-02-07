@@ -5,6 +5,7 @@ from textwrap import wrap
 
 class Issue:
 
+
 	def __init__(self, parameters: dict):
 		self.id = parameters.get("id")
 		self.project = parameters.get("project")
@@ -68,6 +69,15 @@ class Issue:
 		row += f'''|{self.assigned_to["name"][:15] 
 		   if self.assigned_to is not None else "":^15}|'''
 		return row
+
+
+	def get_row(self):
+		return [
+			str(self.id), self.project.get("name"),
+			self.tracker.get("name"), self.status.get("name"),
+			self.priority.get("name"), self.subject,
+			self.assigned_to.get("name")
+		]
 
 		
 	@staticmethod

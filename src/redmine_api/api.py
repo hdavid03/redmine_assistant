@@ -2,7 +2,8 @@ from requests import get as http_get
 from requests import post as http_post
 from redmine_api.issue import Issue
 from redmine_api.time_entry import TimeEntry
-from urllib.parse import urlencode
+from ui_utils.cli_utils import Table
+
 
 class RedmineApi:
 
@@ -35,7 +36,12 @@ class RedmineApi:
 		api_url = self._get_api_endpoint("issues.json", filt)
 		resp = http_get(url=api_url, headers=self.header)
 		issues = Issue.get_issues_from_json(resp.json()["issues"])
-		Issue.table_issues(issues)
+		rows = [issue.get_row() for issue in issues]
+		issue_table = Table(max_rows=20,
+					  header=["ID", "Project", "Tracker", "Status",
+			   				  "Priority", "Subject", "Assignee"],
+					  rows=rows, cellsizes=[7, 26, 10, 10, 10, 34, 15])
+		issue_table.draw()
 
 	
 	def get_issue_by_id(self, id: int, include_journals: bool=True):
@@ -55,6 +61,7 @@ class RedmineApi:
 		count = resp_json.get("total_count")
 		limit = resp_json.get("limit")
 		time_entries = TimeEntry.get_time_entries_from_json(resp.json()["time_entries"])
+		n = len(time_entries)
 		TimeEntry.table_time_entries(time_entries)
 		if filt.get("offset") is None:
 			filt["offset"] = 0
@@ -72,7 +79,7 @@ class RedmineApi:
 					filt["offset"] += offset
 			else:
 				continue
-
+			print("\033[F" * (n + 5))
 			api_url = self._get_api_endpoint("time_entries.json", filt)
 			resp = http_get(url=api_url, headers=self.header)
 			time_entries = TimeEntry.get_time_entries_from_json(resp.json()["time_entries"])

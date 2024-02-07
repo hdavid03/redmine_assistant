@@ -19,7 +19,7 @@ class TimeEntry:
 
 
     def __str__(self):
-        text = HLINE
+        text  = HLINE
         text +=	f'Comments: {self.comments}\r\nadded by {self.user["name"]} '
         text +=	f'{estimate_time_delta_from_now(self.created_on)}\r\n'
         text += HLINE
@@ -35,7 +35,7 @@ class TimeEntry:
 
 
     def get_as_row(self):
-        row = f'|{self.id:^7}'
+        row  = f'|{self.id:^7}'
         row += f'|{self.project["name"][:25]:25}'
         row += f'|{self.activity["name"][:10]:^10}'
         row += f'|{self.issue["id"]:^7}'
@@ -48,7 +48,7 @@ class TimeEntry:
 		
     @staticmethod
     def table_time_entries(time_entries: list):
-        text = HLINE
+        text  = HLINE
         text += f'|{"ID":^7}|{"Project":^25}|{"Activity":^10}'
         text += f'|{"Issue":^7}|{"Comment":^32}'
         text +=	f'|{"Hours":^5}'

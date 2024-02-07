@@ -21,14 +21,14 @@ def main():
 	if command == "time-entry":
 		command = arg_namespace.__dict__.pop(command)
 		if command == "list":
-			filt = time_entry_build_filter(arg_namespace.__dict__)
+			filt = build_filter(arg_namespace.__dict__)
 			redmine_api.get_time_entries(filt)
 		elif command == "show":
 			#TODO: implement time-entry show
 			print('show not implements')
 		elif command == "create":
 			issue_id = arg_namespace.__dict__.pop("id")
-			payload = time_entry_build_filter(arg_namespace.__dict__)
+			payload = build_filter(arg_namespace.__dict__)
 			payload["issue_id"] = issue_id
 			resp = redmine_api.create_time_entry({"time_entry": payload})
 			print(f'{resp.status_code}')
@@ -36,22 +36,20 @@ def main():
 			print("error")
 
 	if command == 'issue':
-		if arg_namespace.__dict__["issue"] == 'create':
+		command = arg_namespace.__dict__.pop(command)
+		if command == 'create':
 			print(f'{arg_namespace.project_id if arg_namespace.project_id is not None else ""}')
 			print(f'{arg_namespace.tracker_id if arg_namespace.tracker_id is not None else ""}')
 			print(f'{arg_namespace.subject if arg_namespace.subject is not None else ""}')
-		if arg_namespace.__dict__["issue"] == 'list':
-			filt = {}
-			# filt[]
-			print(f'{arg_namespace.user_id if arg_namespace.user_id is not None else ""}')
-			print(f'{arg_namespace.assigned_to_id if arg_namespace.assigned_to_id is not None else ""}')
-			redmine_api.get_issues()
+		if command == 'list':
+			filt = build_filter(arg_namespace.__dict__)
+			redmine_api.get_issues(filt)
 	# redmine_api.get_issue_by_id(id=10469)
 	# redmine_api.get_time_entry_by_id(42413)
 	# redmine_api.get_time_entries({"user_id": "me", "limit": 5})
 	# redmine_api.get_issues({"user_id": "me", "limit": 5})
 
-def time_entry_build_filter(args: dict):
+def build_filter(args: dict):
 	options = dict(map(lambda pair: (pair[0], pair[1][0]),
 	 list(filter(lambda pair: pair[1] is not None, args.items()))))
 	return options
