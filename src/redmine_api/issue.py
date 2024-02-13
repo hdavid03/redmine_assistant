@@ -59,18 +59,6 @@ class Issue:
 		return text
 
 
-	def get_as_row(self):
-		row = f'|{self.id:^7}'
-		row += f'|{self.project["name"][:26]:26}'
-		row += f'|{self.tracker["name"][:10]:^10}'
-		row += f'|{self.status["name"][:10]:^10}'
-		row += f'|{self.priority["name"][:10]:^10}'
-		row += f'|{self.subject[:34]:34}'
-		row += f'''|{self.assigned_to["name"][:15] 
-		   if self.assigned_to is not None else "":^15}|'''
-		return row
-
-
 	def get_row(self):
 		return [
 			str(self.id), self.project.get("name"),
@@ -78,18 +66,6 @@ class Issue:
 			self.priority.get("name"), self.subject,
 			self.assigned_to.get("name")
 		]
-
-		
-	@staticmethod
-	def table_issues(issues: list):
-		text = HLINE
-		text += f'|{"ID":^7}|{"Project":^26}|{"Tracker":^10}'
-		text += f'|{"Status":^10}|{"Priority":^10}'
-		text +=	f'|{"Subject":^34}|{"Assignee":^15}|\r\n'
-		text += HLINE
-		print(text, end="")
-		for issue in issues:
-			print(issue.get_as_row())
 
 	
 	@staticmethod

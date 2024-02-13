@@ -32,7 +32,7 @@ class RedmineApi:
 		return url
 	
 
-	def get_issues(self, filt: dict):
+	def table_issues(self, filt: dict):
 		api_url = self._get_api_endpoint("issues.json", filt)
 		resp = http_get(url=api_url, headers=self.header)
 		issues = Issue.get_issues_from_json(resp.json()["issues"])

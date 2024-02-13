@@ -25,7 +25,7 @@ def main():
 			redmine_api.get_time_entries(filt)
 		elif command == "show":
 			#TODO: implement time-entry show
-			print('show not implements')
+			print('show not implemented')
 		elif command == "create":
 			issue_id = arg_namespace.__dict__.pop("id")
 			payload = build_filter(arg_namespace.__dict__)
@@ -43,11 +43,7 @@ def main():
 			print(f'{arg_namespace.subject if arg_namespace.subject is not None else ""}')
 		if command == 'list':
 			filt = build_filter(arg_namespace.__dict__)
-			redmine_api.get_issues(filt)
-	# redmine_api.get_issue_by_id(id=10469)
-	# redmine_api.get_time_entry_by_id(42413)
-	# redmine_api.get_time_entries({"user_id": "me", "limit": 5})
-	# redmine_api.get_issues({"user_id": "me", "limit": 5})
+			redmine_api.table_issues(filt)
 
 def build_filter(args: dict):
 	options = dict(map(lambda pair: (pair[0], pair[1][0]),
