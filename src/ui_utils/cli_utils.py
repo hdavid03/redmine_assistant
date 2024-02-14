@@ -83,6 +83,8 @@ class Table:
 
 		key = 0
 		menu_pos = 0
+		offset = 0
+		start_pos = 3
 
 		# Clear and refresh the screen for a blank canvas
 		stdscr.clear()
@@ -95,16 +97,30 @@ class Table:
 		while (key != ord('q')):
 			stdscr.clear()
 			height, width = stdscr.getmaxyx()
+			content_length = len(content)
 			
 			if key == curses.KEY_DOWN:
-				menu_pos += 1
+				if menu_pos == height - 2 - start_pos:
+					offset += 1
+				else:
+					menu_pos += 1
 			elif key == curses.KEY_UP:
-				menu_pos -= 1
-			elif key == curses.KEY_ENTER and select_item_action is not None:
-				pass
-
+				if menu_pos == 0:
+					offset -= 1
+				else:
+					menu_pos -= 1
+			elif key == curses.KEY_LEFT:
+				offset -= 1
+			elif key == curses.KEY_RIGHT:
+				offset += 1
+				
+			menu_pos = min(content_length - 1, menu_pos)
 			menu_pos = max(0, menu_pos)
-			menu_pos = min(height - 5, menu_pos)
+			offset = max(0, offset)
+			if content_length > height - 4:
+				offset = min(content_length - offset, offset)
+			else:
+				offset = 0
 
 			# Render status bar
 			stdscr.attron(curses.color_pair(1))
@@ -116,16 +132,14 @@ class Table:
 			stdscr.addstr(1, 0, header[:width])
 			stdscr.addstr(2, 0, LINE(min(len(header), width)))
 
-			start_pos = 3
-
 			# Print content
-			for i in range(min(len(content), height - 4)):
+			for i in range(min(content_length, height - 4)):
 				if i == menu_pos:
 					stdscr.attron(curses.color_pair(1))
-					stdscr.addstr(start_pos + i, 0, content[i][:width])
+					stdscr.addstr(start_pos + i, 0, content[i + offset][:width])
 					stdscr.attroff(curses.color_pair(1))
 				else:
-					stdscr.addstr(start_pos + i, 0, content[i][:width])
+					stdscr.addstr(start_pos + i, 0, content[i + offset][:width])
 
 			# Refresh the screen
 			stdscr.move(height - 1, 0)
