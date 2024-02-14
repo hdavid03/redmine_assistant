@@ -1,4 +1,5 @@
 import curses
+from enum import Enum
 from typing import Callable
 from typing import List
 
@@ -6,71 +7,92 @@ HLINE = f'{"-" * 120}\r\n'
 LINE = lambda d: '-' * d
 
 
+class PaginateDirection(Enum):
+	PREV_PAGE = 0
+	NEXT_PAGE = 1
+
+
 class Table:
 
  
 	def __init__(self, 
+			  header: List[str],
+			  rows: List[List[str]],
 			  max_rows=5,
 			  sep = '|',
 			  alignment = "left",
-			  header: List[str] = None,
-			  rows: List[str] = None,
 			  cellsizes: List[int] = None,
-			  paginate: Callable = None,
-			  select_item_action:  Callable = None
+			  paginate: Callable[[PaginateDirection], List[str]] = None,
+			  select_item_action: Callable = None
 		):
+		self._validate_table(header, rows, cellsizes)
 		self.max_rows = max_rows
 		self.sep = sep
 		self.alignment = alignment
-		self.header = header
-		self.rows = rows
 		self.cellsizes = cellsizes
 		self.paginate = paginate
 		self.select_item_action = select_item_action
+		self.header = None
+		self.rows = None
+		self.set_header(header)
+		self.set_rows(rows)
 
 	
-	def _validate_table(self):
-		if self.header is None or self.rows is None or self.cellsizes is None:
+	def set_header(self, header: List[str]):
+		self.header = self._get_formatted_header(header)
+
+
+	def set_rows(self, rows: List[str]):
+		self.rows = self._get_formatted_rows(rows)
+
+	
+	@staticmethod
+	def _validate_table(header: list, rows: list, cellsizes: list):
+		if header is None or rows is None or cellsizes is None:
 			raise ValueError("Header, rows or cell sizes are not specified!")
-		header_length = len(self.header)
-		if header_length != len(self.cellsizes):
+		header_length = len(header)
+		if header_length != len(cellsizes):
 			raise ValueError("Header and cellsizes must have the same size!")
-		if all(map(lambda e: len(e) == header_length, self.rows)) is False:
+		if all(map(lambda e: len(e) == header_length, rows)) is False:
 			raise ValueError("Header and rows must have the same size!")
 
 
 	def draw(self):
 
-		self._validate_table()
-
-		def align(cell: str, width: int):
-			alignment = self.alignment.lower()
-			if alignment == "left":
-				return cell.ljust(width)[:width]
-			elif alignment == "right":
-				return cell.rjust(width)[:width]
-			elif alignment == "center":
-				return cell.center(width)[:width]
-			else:
-				print(f'Wrong alignment parameter used: {self.alignment}')
-				print("Only 'left', 'right' or 'center' parameter is allowed")
-				print("Left alignment is used by default")
-				return cell.ljust(width)[:width]
-
-		header = f'''|{self.sep.join([align(cell=c, width=w)
-						for c,w in zip(self.header, self.cellsizes)])}|'''
-		rows   = [f'''|{self.sep.join([align(cell=c, width=w)
-						for c,w in zip(row, self.cellsizes)])}|'''
-				  for row in self.rows]
 		status_bar = " Press 'q' to exit"
 		if self.select_item_action is None:
 			status_bar += " | ENTER to select item | ↑ ↓ to navigate"
 		if self.paginate is None:
 			status_bar += " | ← → to paginate "
 		curses.wrapper(Table._draw_table_wrapper,
-				 status_bar, rows, header, self.paginate, self.select_item_action)
+				 status_bar, self.rows, self.header, self.paginate, self.select_item_action)
 
+
+	def _align_cell(self, cell: str, width: int):
+		alignment = self.alignment.lower()
+		if alignment == "left":
+			return cell.ljust(width)[:width]
+		elif alignment == "right":
+			return cell.rjust(width)[:width]
+		elif alignment == "center":
+			return cell.center(width)[:width]
+		else:
+			print(f'Wrong alignment parameter used: {self.alignment}')
+			print("Only 'left', 'right' or 'center' parameter is allowed")
+			print("Left alignment is used by default")
+			return cell.ljust(width)[:width]
+
+
+	def _get_formatted_header(self, header: List[str]):
+		return f'''|{self.sep.join([self._align_cell(cell=c, width=w)
+						for c,w in zip(header, self.cellsizes)])}|'''
 	
+
+	def _get_formatted_rows(self, rows: List[List[str]]):
+		return [f'''|{self.sep.join([self._align_cell(cell=c, width=w)
+				for c,w in zip(row, self.cellsizes)])}|''' for row in rows]
+
+
 	@staticmethod
 	def _draw_table_wrapper(
 			stdscr,
@@ -142,7 +164,7 @@ class Table:
 					stdscr.addstr(start_pos + i, 0, content[i + offset][:width])
 
 			# Refresh the screen
-			stdscr.move(height - 1, 0)
+			# stdscr.move(height - 1, 0)
 			stdscr.refresh()
 
 			# Wait for next input
