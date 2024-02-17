@@ -64,8 +64,8 @@ class Table:
 			status_bar += " | ENTER to select item | ↑ ↓ to navigate"
 		if self.paginate is None:
 			status_bar += " | ← → to paginate "
-		curses.wrapper(Table._draw_table_wrapper,
-				 status_bar, self.rows, self.header, self.paginate, self.select_item_action)
+		curses.wrapper(self._draw_table_wrapper,
+				 status_bar, self.rows, self.header)
 
 
 	def _align_cell(self, cell: str, width: int):
@@ -93,14 +93,11 @@ class Table:
 				for c,w in zip(row, self.cellsizes)])}|''' for row in rows]
 
 
-	@staticmethod
-	def _draw_table_wrapper(
+	def _draw_table_wrapper(self,
 			stdscr,
 			status_bar: str,
 			content: List[str],
 			header: str = None,
-			paginate: Callable = None,
-			select_item_action: Callable = None
 		):
 
 		key = 0
@@ -108,11 +105,9 @@ class Table:
 		offset = 0
 		start_pos = 3
 
-		# Clear and refresh the screen for a blank canvas
 		stdscr.clear()
 		stdscr.refresh()
 
-		# Start colors in curses
 		curses.start_color()
 		curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
@@ -120,6 +115,7 @@ class Table:
 			stdscr.clear()
 			height, width = stdscr.getmaxyx()
 			content_length = len(content)
+			num_rows = height - 4
 			
 			if key == curses.KEY_DOWN:
 				if menu_pos == height - 2 - start_pos:
@@ -132,16 +128,15 @@ class Table:
 				else:
 					menu_pos -= 1
 			elif key == curses.KEY_LEFT:
-				offset -= 1
+				offset -= num_rows
 			elif key == curses.KEY_RIGHT:
-				offset += 1
+				offset += num_rows
 				
 			menu_pos = min(content_length - 1, menu_pos)
 			menu_pos = max(0, menu_pos)
 			offset = max(0, offset)
-			if content_length > height - 4:
-				offset = min(content_length - offset, offset)
-			else:
+			offset = min(content_length - num_rows, offset)
+			if num_rows > content_length:
 				offset = 0
 
 			# Render status bar
@@ -155,7 +150,7 @@ class Table:
 			stdscr.addstr(2, 0, LINE(min(len(header), width)))
 
 			# Print content
-			for i in range(min(content_length, height - 4)):
+			for i in range(min(content_length - offset, num_rows)):
 				if i == menu_pos:
 					stdscr.attron(curses.color_pair(1))
 					stdscr.addstr(start_pos + i, 0, content[i + offset][:width])
