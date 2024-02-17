@@ -22,7 +22,7 @@ class Table:
 			  sep = '|',
 			  alignment = "left",
 			  cellsizes: List[int] = None,
-			  paginate: Callable[[PaginateDirection], List[str]] = None,
+			  paginate: Callable[[PaginateDirection, int], List[str]] = None,
 			  select_item_action: Callable = None
 		):
 		self._validate_table(header, rows, cellsizes)
@@ -118,7 +118,8 @@ class Table:
 			num_rows = height - 4
 			
 			if key == curses.KEY_DOWN:
-				if menu_pos == height - 2 - start_pos:
+				if menu_pos == height - 2 - start_pos and \
+					num_rows + offset != content_length:
 					offset += 1
 				else:
 					menu_pos += 1
@@ -132,17 +133,12 @@ class Table:
 			elif key == curses.KEY_RIGHT:
 				offset += num_rows
 				
-			menu_pos = min(content_length - 1, menu_pos)
-			menu_pos = max(0, menu_pos)
+			offset = min(content_length - 1, offset)
 			offset = max(0, offset)
-			offset = min(content_length - num_rows, offset)
 			if num_rows > content_length:
 				offset = 0
-
-			# Render status bar
-			stdscr.attron(curses.color_pair(1))
-			stdscr.addstr(height - 1, 0, status_bar[:width])
-			stdscr.attroff(curses.color_pair(1))
+			menu_pos = min(content_length - offset - 1, menu_pos)
+			menu_pos = max(0, menu_pos)
 
 			# Render header
 			stdscr.addstr(0, 0, LINE(min(len(header), width)))
@@ -158,8 +154,12 @@ class Table:
 				else:
 					stdscr.addstr(start_pos + i, 0, content[i + offset][:width])
 
+			# Render status bar
+			stdscr.attron(curses.color_pair(1))
+			stdscr.addstr(height - 1, 0, f"{status_bar} | offset: {offset}"[:width])
+			stdscr.attroff(curses.color_pair(1))
+			
 			# Refresh the screen
-			# stdscr.move(height - 1, 0)
 			stdscr.refresh()
 
 			# Wait for next input
