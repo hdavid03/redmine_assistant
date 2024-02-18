@@ -33,8 +33,10 @@ class Table:
 		self.paginate = paginate
 		self.max_length = max_length
 		self.select_item_action = select_item_action
+		self.offset = 0
 		self.set_header(header)
 		self.set_rows(rows)
+		self.content_length = len(self.rows)
 
 	
 	def set_header(self, header: List[str]):
@@ -62,8 +64,7 @@ class Table:
 			status_bar += " | ENTER to select item | ↑ ↓ to navigate"
 		if self.paginate is None:
 			status_bar += " | ← → to paginate "
-		curses.wrapper(self._draw_table_wrapper,
-				 status_bar, self.rows, self.header)
+		curses.wrapper(self._draw_table_wrapper, status_bar)
 
 
 	def _align_cell(self, cell: str, width: int):
@@ -94,13 +95,11 @@ class Table:
 	def _draw_table_wrapper(self,
 			stdscr,
 			status_bar: str,
-			content: List[str],
-			header: str = None,
 		):
 
 		key = 0
-		menu_pos = 0
-		offset = 0
+		self.offset = 0
+		self.menu_pos = 0
 		start_pos = 3
 
 		stdscr.clear()
@@ -109,57 +108,41 @@ class Table:
 		curses.start_color()
 		curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
 
-		while (key != ord('q')):
+		while key != ord('q'):
 			stdscr.clear()
 			height, width = stdscr.getmaxyx()
-			content_length = len(content)
-			num_rows = height - 4
-			
-			if key == curses.KEY_DOWN:
-				if menu_pos == height - 2 - start_pos and \
-					num_rows + offset != content_length:
-					offset += 1
-				else:
-					menu_pos += 1
-			elif key == curses.KEY_UP:
-				if menu_pos == 0:
-					offset -= 1
-				else:
-					menu_pos -= 1
-			elif key == curses.KEY_LEFT:
-				offset -= num_rows
-			elif key == curses.KEY_RIGHT:
-				offset += num_rows
+			self.content_length = len(self.rows)
+			self.num_rows = height - 4
+			self.last_pos = height - 2 - start_pos
+
+			self._set_actual_pos_and_offset(key)
 				
-			offset = min(content_length - 1, offset)
-			offset = max(0, offset)
-			if num_rows > content_length:
-				offset = 0
-			menu_pos = min(content_length - offset - 1, menu_pos)
-			menu_pos = max(0, menu_pos)
+			self.offset = min(self.content_length - 1, self.offset)
+			self.offset = max(0, self.offset)
+			if self.num_rows > self.content_length:
+				self.offset = 0
+			self.menu_pos = min(self.content_length - self.offset - 1, self.menu_pos)
+			self.menu_pos = max(0, self.menu_pos)
 
 			# Render header
-			stdscr.addstr(0, 0, LINE(min(len(header), width)))
-			stdscr.addstr(1, 0, header[:width])
-			stdscr.addstr(2, 0, LINE(min(len(header), width)))
+			stdscr.addstr(0, 0, LINE(min(len(self.header), width)))
+			stdscr.addstr(1, 0, self.header[:width])
+			stdscr.addstr(2, 0, LINE(min(len(self.header), width)))
 
-			if self.paginate is not None and \
-				offset + num_rows >= content_length:
-				content += self._get_formatted_rows(self.paginate(content_length))
-				content_length = len(content)
+			self._pagination()
 
-			# Print content
-			for i in range(min(content_length - offset, num_rows)):
-				if i == menu_pos:
+			# Print self.rows
+			for i in range(min(self.content_length - self.offset, self.num_rows)):
+				if i == self.menu_pos:
 					stdscr.attron(curses.color_pair(1))
-					stdscr.addstr(start_pos + i, 0, content[i + offset][:width])
+					stdscr.addstr(start_pos + i, 0, self.rows[i + self.offset][:width])
 					stdscr.attroff(curses.color_pair(1))
 				else:
-					stdscr.addstr(start_pos + i, 0, content[i + offset][:width])
+					stdscr.addstr(start_pos + i, 0, self.rows[i + self.offset][:width])
 
 			# Render status bar
 			stdscr.attron(curses.color_pair(1))
-			stdscr.addstr(height - 1, 0, f"{status_bar} | offset: {offset}"[:width])
+			stdscr.addstr(height - 1, 0, f"{status_bar} | self.offset: {self.offset}"[:width])
 			stdscr.attroff(curses.color_pair(1))
 			
 			# Refresh the screen
@@ -167,4 +150,32 @@ class Table:
 
 			# Wait for next input
 			key = stdscr.getch()
+	
 
+	def _pagination(self):
+		if self.paginate is not None and \
+			self.offset + self.num_rows >= self.content_length and \
+			self.content_length < self.max_length:
+			self.rows += self._get_formatted_rows(self.paginate(self.content_length))
+			self.content_length = len(self.rows)
+
+
+	def _menu_pos_overflow(self):
+		return self.menu_pos == self.last_pos and self.num_rows + self.offset != self.content_length
+
+
+	def _set_actual_pos_and_offset(self, key: int):
+		if key == curses.KEY_DOWN:
+			if self._menu_pos_overflow() is True:
+				self.offset += 1
+			else:
+				self.menu_pos += 1
+		elif key == curses.KEY_UP:
+			if self.menu_pos == 0:
+				self.offset -= 1
+			else:
+				self.menu_pos -= 1
+		elif key == curses.KEY_LEFT:
+			self.offset -= self.num_rows
+		elif key == curses.KEY_RIGHT:
+			self.offset += self.num_rows
