@@ -65,36 +65,26 @@ class RedmineApi:
 		print(issue)
 		
 
-	def get_time_entries(self, filt: dict):
-		api_url = self._get_api_endpoint("time_entries.json", filt)
-		resp = http_get(url=api_url, headers=self.header)
-		resp_json = resp.json()
-		count = resp_json.get("total_count")
-		limit = resp_json.get("limit")
-		time_entries = TimeEntry.get_time_entries_from_json(resp.json()["time_entries"])
-		n = len(time_entries)
-		TimeEntry.table_time_entries(time_entries)
-		if filt.get("offset") is None:
-			filt["offset"] = 0
-		offset = limit
-		ans = ""
-		while ans.upper() != "Q":
-			ans = input("b/n/q")
-			if ans.upper() == "B":
-				if filt["offset"] > (offset - 1):
-					filt["offset"] -= offset
-				elif filt["offset"] != 0:
-					filt["offset"] = 0
-			elif ans.upper() == "N":
-				if (filt["offset"] + offset) < count + 1:
-					filt["offset"] += offset
-			else:
-				continue
-			print("\033[F" * (n + 5))
-			api_url = self._get_api_endpoint("time_entries.json", filt)
-			resp = http_get(url=api_url, headers=self.header)
-			time_entries = TimeEntry.get_time_entries_from_json(resp.json()["time_entries"])
-			TimeEntry.table_time_entries(time_entries)
+	def table_time_entries(self, filt: dict):
+		self.time_entries_filter = filt
+		api_url = self._get_api_endpoint("time_entries.json", self.time_entries_filter)
+		resp = http_get(url=api_url, headers=self.header).json()
+		total_count = resp["total_count"]
+		time_entries = TimeEntry.get_time_entries_from_json(resp["time_entries"])
+		rows = [time_entry.get_row() for time_entry in time_entries]
+		time_entry_table = Table(header=["ID", "Project", "Activity", "Issue",
+			   				        "Comment", "Hours", "Date", "User"],
+					  rows=rows, cellsizes=[7, 25, 10, 7, 32, 5, 10, 15],
+					  max_length=total_count, paginate=self.time_entries_paginate)
+		time_entry_table.draw()
+
+
+	def time_entries_paginate(self, offset: int):
+		self.time_entries_filter["offset"] = offset
+		api_url = self._get_api_endpoint("time_entries.json", self.time_entries_filter)
+		resp = http_get(url=api_url, headers=self.header).json()
+		time_entries = TimeEntry.get_time_entries_from_json(resp["time_entries"])
+		return [time_entry.get_row() for time_entry in time_entries]
 
 
 	def create_time_entry(self, parameters: dict):

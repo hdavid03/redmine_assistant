@@ -142,7 +142,7 @@ class Table:
 
 			# Render status bar
 			stdscr.attron(curses.color_pair(1))
-			stdscr.addstr(height - 1, 0, f"{status_bar} | self.offset: {self.offset}"[:width])
+			stdscr.addstr(height - 1, 0, f"{status_bar} | page: {self._get_page_num()} "[:width])
 			stdscr.attroff(curses.color_pair(1))
 			
 			# Refresh the screen
@@ -150,7 +150,10 @@ class Table:
 
 			# Wait for next input
 			key = stdscr.getch()
-	
+
+
+	def _get_page_num(self):	
+		return self.offset // self.num_rows + 1
 
 	def _pagination(self):
 		if self.paginate is not None and \

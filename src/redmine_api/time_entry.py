@@ -45,6 +45,14 @@ class TimeEntry:
         row += f'|{self.user["name"][:15]:^15}|'
         return row
 
+    def get_row(self):
+        return [
+			str(self.id), self.project.get("name"),
+			self.activity.get("name"), str(self.issue.get("id")),
+			self.comments, str(self.hours),
+			self.spent_on, self.user.get("name")
+		]
+
 		
     @staticmethod
     def table_time_entries(time_entries: list):

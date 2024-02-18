@@ -22,9 +22,9 @@ def main():
 		command = arg_namespace.__dict__.pop(command)
 		if command == "list":
 			filt = build_filter(arg_namespace.__dict__)
-			redmine_api.get_time_entries(filt)
+			redmine_api.table_time_entries(filt)
 		elif command == "show":
-			#TODO: implement time-entry show
+			# TODO: implement time-entry show
 			print('show not implemented')
 		elif command == "create":
 			issue_id = arg_namespace.__dict__.pop("id")
@@ -44,6 +44,7 @@ def main():
 		if command == 'list':
 			filt = build_filter(arg_namespace.__dict__)
 			redmine_api.table_issues(filt)
+
 
 def build_filter(args: dict):
 	options = dict(map(lambda pair: (pair[0], pair[1][0]),
