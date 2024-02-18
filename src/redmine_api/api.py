@@ -3,6 +3,7 @@ from requests import post as http_post
 from redmine_api.issue import Issue
 from redmine_api.time_entry import TimeEntry
 from ui_utils.cli_utils import Table
+from ui_utils.cli_utils import PaginateDirection
 
 
 class RedmineApi:
@@ -17,9 +18,9 @@ class RedmineApi:
 		else:
 			self.base_url = url + "/"
 		self.api_key = user_info["api_key"]
-		self.header = {
-			"X-Redmine-API-Key": self.api_key
-		}
+		self.header = {"X-Redmine-API-Key": self.api_key}
+		self.issues_filter = None
+		self.time_entries_filter = None
 
 
 	def _get_api_endpoint(self, source: str, parameters: dict=None):
@@ -33,15 +34,25 @@ class RedmineApi:
 	
 
 	def table_issues(self, filt: dict):
-		api_url = self._get_api_endpoint("issues.json", filt)
-		resp = http_get(url=api_url, headers=self.header)
-		issues = Issue.get_issues_from_json(resp.json()["issues"])
+		self.issues_filter = filt
+		api_url = self._get_api_endpoint("issues.json", self.issues_filter)
+		resp = http_get(url=api_url, headers=self.header).json()
+		total_count = resp["total_count"]
+		issues = Issue.get_issues_from_json(resp["issues"])
 		rows = [issue.get_row() for issue in issues]
-		issue_table = Table(max_rows=20,
-					  header=["ID", "Project", "Tracker", "Status",
-			   				  "Priority", "Subject", "Assignee"],
-					  rows=rows, cellsizes=[7, 26, 10, 10, 10, 34, 15])
+		issue_table = Table(header=["ID", "Project", "Tracker", "Status",
+			   				        "Priority", "Subject", "Assignee"],
+					  rows=rows, cellsizes=[7, 26, 10, 10, 10, 34, 15],
+					  max_length=total_count, paginate=self.issues_paginate)
 		issue_table.draw()
+
+	
+	def issues_paginate(self, offset: int):
+		self.issues_filter["offset"] = offset
+		api_url = self._get_api_endpoint("issues.json", self.issues_filter)
+		resp = http_get(url=api_url, headers=self.header).json()
+		issues = Issue.get_issues_from_json(resp["issues"])
+		return [issue.get_row() for issue in issues]
 
 	
 	def get_issue_by_id(self, id: int, include_journals: bool=True):

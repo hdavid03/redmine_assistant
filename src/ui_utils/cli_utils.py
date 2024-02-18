@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Callable
 from typing import List
 
+
 HLINE = f'{"-" * 120}\r\n'
 LINE = lambda d: '-' * d
 
@@ -18,22 +19,20 @@ class Table:
 	def __init__(self, 
 			  header: List[str],
 			  rows: List[List[str]],
-			  max_rows=5,
+			  max_length = None,
 			  sep = '|',
 			  alignment = "left",
 			  cellsizes: List[int] = None,
-			  paginate: Callable[[PaginateDirection, int], List[str]] = None,
+			  paginate: Callable[[int], List[str]] = None,
 			  select_item_action: Callable = None
 		):
 		self._validate_table(header, rows, cellsizes)
-		self.max_rows = max_rows
 		self.sep = sep
 		self.alignment = alignment
 		self.cellsizes = cellsizes
 		self.paginate = paginate
+		self.max_length = max_length
 		self.select_item_action = select_item_action
-		self.header = None
-		self.rows = None
 		self.set_header(header)
 		self.set_rows(rows)
 
@@ -45,7 +44,7 @@ class Table:
 	def set_rows(self, rows: List[str]):
 		self.rows = self._get_formatted_rows(rows)
 
-	
+
 	@staticmethod
 	def _validate_table(header: list, rows: list, cellsizes: list):
 		if header is None or rows is None or cellsizes is None:
@@ -58,7 +57,6 @@ class Table:
 
 
 	def draw(self):
-
 		status_bar = " Press 'q' to exit"
 		if self.select_item_action is None:
 			status_bar += " | ENTER to select item | ↑ ↓ to navigate"
@@ -144,6 +142,11 @@ class Table:
 			stdscr.addstr(0, 0, LINE(min(len(header), width)))
 			stdscr.addstr(1, 0, header[:width])
 			stdscr.addstr(2, 0, LINE(min(len(header), width)))
+
+			if self.paginate is not None and \
+				offset + num_rows >= content_length:
+				content += self._get_formatted_rows(self.paginate(content_length))
+				content_length = len(content)
 
 			# Print content
 			for i in range(min(content_length - offset, num_rows)):

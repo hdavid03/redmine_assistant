@@ -13,7 +13,10 @@ class Issue:
 		self.status = parameters.get("status")
 		self.priority = parameters.get("priority")
 		self.author = parameters.get("author")
-		self.assigned_to = parameters.get("assigned_to")
+		if parameters.get("assigned_to") is None:
+			self.assigned_to = {"name": "None"}
+		else:
+			self.assigned_to = parameters.get("assigned_to")
 		self.subject = parameters.get("subject")
 		self.description = parameters.get("description")
 		self.start_date = parameters.get("start_date")
