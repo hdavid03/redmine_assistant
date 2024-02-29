@@ -73,7 +73,7 @@ class RedmineApi:
 		time_entries = TimeEntry.get_time_entries_from_json(resp["time_entries"])
 		rows = [time_entry.get_row() for time_entry in time_entries]
 		time_entry_table = Table(header=["ID", "Project", "Activity", "Issue",
-			   				        "Comment", "Hours", "Date", "User"],
+			   				        "Comment", "Hours", "Date", "User"], scrollable=False,
 					  rows=rows, cellsizes=[7, 25, 10, 7, 32, 5, 10, 15],
 					  max_length=total_count, paginate=self.time_entries_paginate)
 		time_entry_table.draw()

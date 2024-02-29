@@ -20,6 +20,7 @@ class Table:
 			  header: List[str],
 			  rows: List[List[str]],
 			  max_length = None,
+			  scrollable = True,
 			  sep = '|',
 			  alignment = "left",
 			  cellsizes: List[int] = None,
@@ -28,6 +29,7 @@ class Table:
 		):
 		self._validate_table(header, rows, cellsizes)
 		self.sep = sep
+		self.scrollable = scrollable
 		self.alignment = alignment
 		self.cellsizes = cellsizes
 		self.paginate = paginate
@@ -62,7 +64,7 @@ class Table:
 		status_bar = " Press 'q' to exit"
 		if self.select_item_action is None:
 			status_bar += " | ENTER to select item | ↑ ↓ to navigate"
-		if self.paginate is None:
+		if self.paginate is not None:
 			status_bar += " | ← → to paginate "
 		curses.wrapper(self._draw_table_wrapper, status_bar)
 
@@ -155,6 +157,7 @@ class Table:
 	def _get_page_num(self):	
 		return self.offset // self.num_rows + 1
 
+ 
 	def _pagination(self):
 		if self.paginate is not None and \
 			self.offset + self.num_rows >= self.content_length and \
@@ -164,13 +167,16 @@ class Table:
 
 
 	def _menu_pos_overflow(self):
-		return self.menu_pos == self.last_pos and self.num_rows + self.offset != self.content_length
+		return self.menu_pos == self.last_pos \
+			   and self.num_rows + self.offset != self.content_length \
+			   and self.paginate is not None
 
 
 	def _set_actual_pos_and_offset(self, key: int):
 		if key == curses.KEY_DOWN:
 			if self._menu_pos_overflow() is True:
-				self.offset += 1
+				if self.scrollable is True:
+					self.offset += 1
 			else:
 				self.menu_pos += 1
 		elif key == curses.KEY_UP:
