@@ -3,7 +3,6 @@ from requests import post as http_post
 from redmine_api.issue import Issue
 from redmine_api.time_entry import TimeEntry
 from ui_utils.cli_utils import Table
-from ui_utils.cli_utils import PaginateDirection
 
 
 class RedmineApi:
@@ -41,7 +40,7 @@ class RedmineApi:
 		issues = Issue.get_issues_from_json(resp["issues"])
 		rows = [issue.get_row() for issue in issues]
 		issue_table = Table(header=["ID", "Project", "Tracker", "Status",
-			   				        "Priority", "Subject", "Assignee"],
+			   				    "Priority", "Subject", "Assignee"], scrollable=False,
 					  rows=rows, cellsizes=[7, 26, 10, 10, 10, 34, 15],
 					  max_length=total_count, paginate=self.issues_paginate)
 		issue_table.draw()
@@ -75,7 +74,8 @@ class RedmineApi:
 		time_entry_table = Table(header=["ID", "Project", "Activity", "Issue",
 			   				        "Comment", "Hours", "Date", "User"], scrollable=False,
 					  rows=rows, cellsizes=[7, 25, 10, 7, 32, 5, 10, 15],
-					  max_length=total_count, paginate=self.time_entries_paginate)
+					  max_length=total_count, paginate=self.time_entries_paginate,
+					  select_item_action=self.get_time_entry_as_content)
 		time_entry_table.draw()
 
 
@@ -96,11 +96,21 @@ class RedmineApi:
 	def get_time_entry_by_id(self, id: int):
 		api_url = self._get_api_endpoint(f'time_entries/{id}.json')
 		resp = http_get(url=api_url, headers=self.header)
-		time_entry = TimeEntry(resp.json()["time_entry"])
-		print(time_entry)
+		return TimeEntry(resp.json()["time_entry"])
+	
+
+	def get_time_entry_as_content(self, id: int):
+		time_entry = self.get_time_entry_by_id(id)
+		time_entry_dict = time_entry.to_dict()
+		time_entry_dict["log time"] = ""
+		time_entry_dict["header"] = "Time entry details"
+		return time_entry_dict
 
 
-
+	def create_issue(self, parameters: dict):
+		api_url = self._get_api_endpoint("issues.json")
+		resp = http_post(url=api_url, headers=self.header, json=parameters)
+		return resp
 
 	
 

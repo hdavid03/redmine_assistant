@@ -24,8 +24,8 @@ def main():
 			filt = build_filter(arg_namespace.__dict__)
 			redmine_api.table_time_entries(filt)
 		elif command == "show":
-			# TODO: implement time-entry show
-			print('show not implemented')
+			time_entry_id = arg_namespace.__dict__.pop("id")
+			print(redmine_api.get_time_entry_by_id(time_entry_id))
 		elif command == "create":
 			issue_id = arg_namespace.__dict__.pop("id")
 			payload = build_filter(arg_namespace.__dict__)

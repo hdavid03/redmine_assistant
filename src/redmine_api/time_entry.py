@@ -34,6 +34,21 @@ class TimeEntry:
         return text
 
 
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "project": self.project.get("name"),
+            "issue": str(self.issue.get("id")),
+            "user": self.user.get("name"),
+            "activity": self.activity.get("name"),
+            "hours": str(self.hours),
+            "comments": self.comments,
+            "spent_on": self.spent_on,
+            "created_on": self.created_on,
+            "updated_on": self.updated_on
+        }
+
+
     def get_as_row(self):
         row  = f'|{self.id:^7}'
         row += f'|{self.project["name"][:25]:25}'
